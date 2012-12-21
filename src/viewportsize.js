@@ -29,10 +29,11 @@
     ADD_EVENT_LISTENER = "addEventListener",
     REMOVE_EVENT_LISTENER = "removeEventListener",
     CREATE_EVENT = "createEvent",
-    VIEWPORTSIZE = "viewportsize",
-    ONVIEWPORTSIZE = "on" + VIEWPORTSIZE,
     DOM_CONTENT_LOADED = "DOMContentLoaded",
     LOAD = "load",
+    VIEWPORTSIZE = "viewportsize",
+    ORIENTATIONCHANGE = "orientationchange",
+    RESIZE = "resize",
 
     // add and remove listeners
     add = ADD_EVENT_LISTENER in window ?
@@ -54,15 +55,16 @@
 
     // fire DOM event
     fire = CREATE_EVENT in document ?
-      function (size) {
+      function (type, size) {
         e = document[CREATE_EVENT]("Event");
-        e.initEvent(VIEWPORTSIZE, true, true);
+        e.initEvent(type, true, true);
         e.result = size;
         window.dispatchEvent(e);
-        fireDOMLevel0();
+        fireDOMLevel0(type);
       } :
-      function (size) {
-        fireDOMLevel0(e = {type: VIEWPORTSIZE, result: size});
+      function (type, size) {
+        e = {type: type, result: size};
+        fireDOMLevel0(type);
       }
     ,
 
@@ -80,9 +82,22 @@
     e
   ;
 
-  function fireDOMLevel0() {
-    typeof window[ONVIEWPORTSIZE] == "function" &&
-    window[ONVIEWPORTSIZE](e);
+  function addTriggers() {
+    add(window, ORIENTATIONCHANGE, resize);
+    add(window, RESIZE, resize);
+  }
+
+  /*
+  function removeTriggers() {
+    remove(window, ORIENTATIONCHANGE, resize);
+    remove(window, RESIZE, resize);
+  }
+  */
+
+  function fireDOMLevel0(type) {
+    typeof window[
+      type = "on" + type
+    ] == "function" && window[type](e);
     e = null;
   }
 
@@ -91,14 +106,14 @@
       html = document.documentElement;
       htmlStyle = html.style;
       bodyStyle = body.style;
-      add(window, "orientationchange", resize);
-      add(window, "resize", resize);
+      addTriggers();
     }
     return !!body;
   }
 
   function define(e) {
     timer = 0;
+
     width = window.innerWidth || html.clientWidth || html.offsetHeight;
     height = window.innerHeight || html.clientHeight || html.offsetHeight;
     bodyStyle.display = bodyDisplay;
@@ -109,7 +124,8 @@
     htmlStyle.padding = htmlPadding;
     htmlStyle.fontSize = htmlFontSize;
     htmlStyle.lineHeight = htmlLineHeight;
-    if (SM && height !== screen.availWidth) {
+
+    if (SM && height !== screen.availWidth && window == top) {
       height += 60;
     } else if(AWKM) {
       // not sure ...
@@ -123,15 +139,26 @@
     } else if(FuckingIE7) {
       width += 19;
     }
+
     htmlStyle.width = width + "px";
     htmlStyle.height = height + "px";
-    fire({
-      width: width,
-      height: height
-    });
+
+    fire(
+      VIEWPORTSIZE,
+      {
+        width: width,
+        height: height
+      }
+    );
+
+    setTimeout(addTriggers, 50);
   }
 
   function prepare() {
+    fire(
+      "before" + VIEWPORTSIZE
+    );
+
     // hide the body, kinda mandatory
     bodyDisplay = bodyStyle.display;
     bodyStyle.display = "none";
@@ -156,10 +183,12 @@
   }
 
   function resize() {
-    timer ?
-      clearTimeout(timer) : prepare()
-    ;
-    timer = setTimeout(define, 500);
+    if (!timer) {
+      remove(window, ORIENTATIONCHANGE, resize);
+      remove(window, RESIZE, resize);
+      prepare();
+      timer = setTimeout(define, 500);
+    }
   }
 
   function firstShot() {
