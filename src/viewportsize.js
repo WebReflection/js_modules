@@ -1,4 +1,4 @@
-/*!
+/*! please check view.js which is probably what you are looking for
  * A window event fired when the viewport size is known properly or changed
  * @license (C) Andrea Giammarchi - Mit Style License
  */
