@@ -5,6 +5,7 @@
   ctx,                    // canvas, will be its context
   object,                 // the view object
   ackingStorePixelRatio,  // helps discovering prefixes
+  //fullscreenchange,       // helps adding listeners
   addEventListener,       // helps checking W3C way
   getContext,             // helps shortcutting repeated method access
   load,                   // helps shortcutting load event type
@@ -42,11 +43,11 @@
     // will be 1 if not supported
     object.backingStore = (
       ctx &&
+        ctx["b" + ackingStorePixelRatio] ||
         ctx["webkitB" + ackingStorePixelRatio] ||
         ctx["mozB" + ackingStorePixelRatio] ||
         ctx["msB" + ackingStorePixelRatio] ||
-        ctx["oB" + ackingStorePixelRatio] ||
-        ctx["b" + ackingStorePixelRatio]
+        ctx["oB" + ackingStorePixelRatio]
       ) || 1
     ;
   }
@@ -60,6 +61,13 @@
         window[addEventListener](load, onresize, true),
         window[addEventListener](resize, onresize, true),
         window[addEventListener]("orientationchange", onresize, true)
+        /** not really fired as expected
+        ,window[addEventListener](fullscreenchange, onresize, true),
+        window[addEventListener]("webkit" + fullscreenchange, onresize, true),
+        window[addEventListener]("moz" + fullscreenchange, onresize, true),
+        window[addEventListener]("ms" + fullscreenchange, onresize, true),
+        window[addEventListener]("o" + fullscreenchange, onresize, true)
+        //*/
       ) :
       (
         // IE < 9 way
@@ -76,6 +84,7 @@
   document.createElement("canvas"),
   {},
   "ackingStorePixelRatio",
+  //"fullscreenchange",
   "addEventListener",
   "getContext",
   "load",
